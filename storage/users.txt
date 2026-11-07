@@ -1,3 +1,0 @@
-# Formato: usuario:senha
-# A senha pode ser texto puro ou um hash gerado por: php -r "echo password_hash('minhasenha', PASSWORD_DEFAULT);"
-admin:admin123
