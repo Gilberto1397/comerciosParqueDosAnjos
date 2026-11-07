@@ -63,7 +63,12 @@
   var preview = document.getElementById('preview');
   function validarImagem() {
     var file = input.files[0];
-    var ok = !!file && /^image\/(jpeg|png|webp)$/.test(file.type) && file.size <= MAX_BYTES;
+    // Na edição a imagem é opcional
+    if (!file) {
+      input.setCustomValidity('');
+      return form.dataset.edit === '1';
+    }
+    var ok = /^image\/(jpeg|png|webp)$/.test(file.type) && file.size <= MAX_BYTES;
     input.setCustomValidity(ok ? '' : 'invalid');
     return ok;
   }

@@ -3,6 +3,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Entities\Comercio;
+use App\Exceptions\ForbiddenException;
+use App\Exceptions\NotFoundException;
 use App\Exceptions\ValidationException;
 use App\Repositories\ComercioRepository;
 
@@ -34,8 +36,98 @@ final class ComercioService
         return $this->repo->find($id);
     }
 
+    /**
+     * Retorna o comércio apenas se pertencer ao usuário.
+     * @throws NotFoundException
+     * @throws ForbiddenException
+     */
+    public function buscarEditavel(int $id, string $usuario): Comercio
+    {
+        $comercio = $this->repo->find($id);
+        if ($comercio === null) {
+            throw new NotFoundException();
+        }
+        if (!$comercio->pertenceA($usuario)) {
+            throw new ForbiddenException();
+        }
+        return $comercio;
+    }
+
     /** @throws ValidationException */
-    public function cadastrar(array $data, ?array $file): int
+    public function cadastrar(string $usuario, array $data, ?array $file): int
+    {
+        [$campos, $errors] = $this->validar($data);
+
+        $imagem = '';
+        if (!$errors) {
+            try {
+                $imagem = $this->uploads->saveImage($file);
+            } catch (ValidationException $e) {
+                $errors += $e->errors();
+            }
+        } elseif (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+            $errors['imagem_capa'] = 'Envie uma imagem de capa.';
+        }
+
+        if ($errors) {
+            throw new ValidationException($errors);
+        }
+
+        return $this->repo->create(new Comercio(
+            null, $campos['titulo'], $campos['descricao'], $campos['dias'],
+            $campos['abertura'], $campos['fechamento'], $imagem, $usuario
+        ));
+    }
+
+    /**
+     * @throws NotFoundException
+     * @throws ForbiddenException
+     * @throws ValidationException
+     */
+    public function atualizar(int $id, string $usuario, array $data, ?array $file): void
+    {
+        $comercio = $this->buscarEditavel($id, $usuario);
+        [$campos, $errors] = $this->validar($data);
+
+        // Na edição a imagem é opcional: só troca se um novo arquivo foi enviado
+        $enviouImagem = ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+        $novaImagem = null;
+        if (!$errors && $enviouImagem) {
+            try {
+                $novaImagem = $this->uploads->saveImage($file);
+            } catch (ValidationException $e) {
+                $errors += $e->errors();
+            }
+        }
+
+        if ($errors) {
+            throw new ValidationException($errors);
+        }
+
+        $imagemAntiga = $comercio->imagemCapa;
+        $comercio->titulo            = $campos['titulo'];
+        $comercio->descricao         = $campos['descricao'];
+        $comercio->diasAtendimento   = $campos['dias'];
+        $comercio->horarioAbertura   = $campos['abertura'];
+        $comercio->horarioFechamento = $campos['fechamento'];
+        if ($novaImagem !== null) {
+            $comercio->imagemCapa = $novaImagem;
+        }
+
+        if (!$this->repo->update($comercio)) {
+            if ($novaImagem !== null) {
+                $this->uploads->delete($novaImagem);
+            }
+            throw new ForbiddenException();
+        }
+
+        if ($novaImagem !== null) {
+            $this->uploads->delete($imagemAntiga);
+        }
+    }
+
+    /** @return array{0: array, 1: array} [campos normalizados, erros] */
+    private function validar(array $data): array
     {
         $titulo     = trim((string) ($data['titulo'] ?? ''));
         $descricao  = trim((string) ($data['descricao'] ?? ''));
@@ -60,21 +152,10 @@ final class ComercioService
             $errors['horario'] = 'O horário de abertura deve ser anterior ao de fechamento.';
         }
 
-        // Só salva a imagem se o resto estiver válido (evita arquivos órfãos)
-        if (!$errors) {
-            try {
-                $imagem = $this->uploads->saveImage($file);
-            } catch (ValidationException $e) {
-                $errors += $e->errors();
-            }
-        } elseif (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
-            $errors['imagem_capa'] = 'Envie uma imagem de capa.';
-        }
-
-        if ($errors) {
-            throw new ValidationException($errors);
-        }
-
-        return $this->repo->create(new Comercio(null, $titulo, $descricao, $dias, $abertura, $fechamento, $imagem));
+        return [
+            ['titulo' => $titulo, 'descricao' => $descricao, 'dias' => $dias,
+             'abertura' => $abertura, 'fechamento' => $fechamento],
+            $errors,
+        ];
     }
 }

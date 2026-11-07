@@ -12,7 +12,7 @@ final class AuthController
     public function showLogin(): void
     {
         if (Auth::check()) {
-            Response::redirect('/');
+            Response::redirect('/comercios');
         }
         View::render('login', ['title' => 'Entrar', 'error' => null, 'username' => '']);
     }
@@ -23,7 +23,7 @@ final class AuthController
         $password = (string) ($_POST['password'] ?? '');
 
         if ((new AuthService())->attempt($username, $password)) {
-            Response::redirect('/');
+            Response::redirect('/comercios');
         }
 
         http_response_code(401);

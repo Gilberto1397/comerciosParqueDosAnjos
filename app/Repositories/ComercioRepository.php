@@ -43,8 +43,8 @@ final class ComercioRepository
     public function create(Comercio $c): int
     {
         $stmt = $this->db->prepare('INSERT INTO comercios
-            (titulo, descricao, dias_atendimento, horario_abertura, horario_fechamento, imagem_capa)
-            VALUES (:titulo, :descricao, :dias, :abertura, :fechamento, :imagem)');
+            (titulo, descricao, dias_atendimento, horario_abertura, horario_fechamento, imagem_capa, usuario)
+            VALUES (:titulo, :descricao, :dias, :abertura, :fechamento, :imagem, :usuario)');
         $stmt->execute([
             ':titulo'     => $c->titulo,
             ':descricao'  => $c->descricao,
@@ -52,8 +52,30 @@ final class ComercioRepository
             ':abertura'   => $c->horarioAbertura,
             ':fechamento' => $c->horarioFechamento,
             ':imagem'     => $c->imagemCapa,
+            ':usuario'    => $c->usuario,
         ]);
 
         return (int) $this->db->lastInsertId();
+    }
+
+    /** Atualiza apenas se o comércio pertencer ao usuário (defesa extra no banco). */
+    public function update(Comercio $c): bool
+    {
+        $stmt = $this->db->prepare('UPDATE comercios SET
+                titulo = :titulo, descricao = :descricao, dias_atendimento = :dias,
+                horario_abertura = :abertura, horario_fechamento = :fechamento, imagem_capa = :imagem
+            WHERE id = :id AND usuario = :usuario');
+        $stmt->execute([
+            ':titulo'     => $c->titulo,
+            ':descricao'  => $c->descricao,
+            ':dias'       => implode(',', $c->diasAtendimento),
+            ':abertura'   => $c->horarioAbertura,
+            ':fechamento' => $c->horarioFechamento,
+            ':imagem'     => $c->imagemCapa,
+            ':id'         => $c->id,
+            ':usuario'    => $c->usuario,
+        ]);
+
+        return $stmt->rowCount() === 1;
     }
 }

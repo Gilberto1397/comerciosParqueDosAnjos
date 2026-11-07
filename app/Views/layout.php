@@ -9,21 +9,23 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body class="bg-light">
-<?php if (Auth::check()): ?>
 <nav class="navbar navbar-expand-lg bg-white border-bottom mb-4">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="/"><i class="bi bi-shop"></i> Comércios Locais</a>
+        <a class="navbar-brand fw-bold" href="/comercios"><i class="bi bi-shop"></i> Comércios Locais</a>
         <div class="d-flex align-items-center gap-2">
-            <a href="/comercios/novo" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Novo comércio</a>
-            <span class="text-muted small d-none d-sm-inline"><?= e(Auth::user()) ?></span>
-            <form method="post" action="/logout" class="m-0">
-                <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
-                <button class="btn btn-outline-secondary btn-sm">Sair</button>
-            </form>
+            <?php if (Auth::check()): ?>
+                <a href="/comercios/novo" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Novo comércio</a>
+                <span class="text-muted small d-none d-sm-inline"><?= e(Auth::user()) ?></span>
+                <form method="post" action="/logout" class="m-0">
+                    <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+                    <button class="btn btn-outline-secondary btn-sm">Sair</button>
+                </form>
+            <?php else: ?>
+                <a href="/login" class="btn btn-outline-primary btn-sm"><i class="bi bi-box-arrow-in-right"></i> Entrar</a>
+            <?php endif; ?>
         </div>
     </div>
 </nav>
-<?php endif; ?>
 
 <main class="container pb-5">
     <?php if (!empty($flash)): ?>

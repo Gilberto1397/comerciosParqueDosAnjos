@@ -1,0 +1,14 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      - db_data:/var/www/html/storage              # banco SQLite persistente
+      - uploads_data:/var/www/html/public/uploads  # imagens persistentes
+      - ./storage/users.txt:/var/www/html/storage/users.txt:ro  # edite usuários sem rebuild
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  uploads_data:

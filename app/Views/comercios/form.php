@@ -2,6 +2,9 @@
 use App\Core\Auth;
 use App\Entities\Comercio;
 
+$comercio = $comercio ?? null;
+$isEdit = $comercio !== null;
+$action = $isEdit ? '/comercios/' . (int) $comercio->id : '/comercios';
 $old = $old ?? [];
 $diasMarcados = (array) ($old['dias'] ?? []);
 $err = fn (string $k) => isset($errors[$k]) ? e($errors[$k]) : null;
@@ -9,11 +12,11 @@ $invalid = fn (string $k) => isset($errors[$k]) ? ' is-invalid' : '';
 ?>
 <div class="row justify-content-center">
     <div class="col-lg-8">
-        <h1 class="h3 mb-3">Novo comércio</h1>
+        <h1 class="h3 mb-3"><?= $isEdit ? 'Editar comércio' : 'Novo comércio' ?></h1>
         <div class="card shadow-sm">
             <div class="card-body p-4">
-                <form method="post" action="/comercios" enctype="multipart/form-data"
-                      class="needs-validation" id="form-comercio" novalidate>
+                <form method="post" action="<?= e($action) ?>" enctype="multipart/form-data"
+                      class="needs-validation" id="form-comercio" data-edit="<?= $isEdit ? '1' : '0' ?>" novalidate>
                     <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
 
                     <div class="mb-3">
@@ -70,16 +73,25 @@ $invalid = fn (string $k) => isset($errors[$k]) ? ' is-invalid' : '';
                     </div>
 
                     <div class="mb-4">
-                        <label for="imagem_capa" class="form-label">Imagem de capa</label>
+                        <label for="imagem_capa" class="form-label">
+                            Imagem de capa<?= $isEdit ? ' <small class="text-muted">(opcional: envie apenas para trocar)</small>' : '' ?>
+                        </label>
+                        <?php if ($isEdit): ?>
+                            <div class="mb-2">
+                                <img src="<?= e(App\Core\Config::get('upload_url') . '/' . $comercio->imagemCapa) ?>"
+                                     class="img-fluid rounded" style="max-height:160px" alt="Capa atual">
+                            </div>
+                        <?php endif; ?>
                         <input type="file" class="form-control<?= $invalid('imagem_capa') ?>" id="imagem_capa"
-                               name="imagem_capa" accept="image/jpeg,image/png,image/webp" required>
+                               name="imagem_capa" accept="image/jpeg,image/png,image/webp" <?= $isEdit ? '' : 'required' ?>>
                         <div class="invalid-feedback"><?= $err('imagem_capa') ?? 'Envie uma imagem JPG, PNG ou WEBP de até 2 MB.' ?></div>
                         <img id="preview" class="img-fluid rounded mt-3 d-none" style="max-height:220px" alt="Pré-visualização">
                     </div>
 
                     <div class="d-flex gap-2">
-                        <button class="btn btn-primary">Salvar</button>
-                        <a href="/" class="btn btn-outline-secondary">Cancelar</a>
+                        <button class="btn btn-primary"><?= $isEdit ? 'Salvar alterações' : 'Salvar' ?></button>
+                        <a href="<?= $isEdit ? '/comercios/' . (int) $comercio->id : '/comercios' ?>"
+                           class="btn btn-outline-secondary">Cancelar</a>
                     </div>
                 </form>
             </div>

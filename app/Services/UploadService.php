@@ -39,4 +39,13 @@ final class UploadService
         }
         return $name;
     }
+
+    /** Remove uma imagem salva anteriormente (ignora caminhos suspeitos). */
+    public function delete(string $name): void
+    {
+        $path = rtrim(Config::get('upload_dir'), '/') . '/' . basename($name);
+        if (is_file($path)) {
+            @unlink($path);
+        }
+    }
 }

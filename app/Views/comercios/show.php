@@ -1,5 +1,16 @@
-<?php /** @var App\Entities\Comercio $comercio */ ?>
-<a href="/" class="btn btn-link px-0 mb-2"><i class="bi bi-arrow-left"></i> Voltar</a>
+<?php
+use App\Core\Auth;
+/** @var App\Entities\Comercio $comercio */
+$ehDono = $comercio->pertenceA(Auth::user());
+?>
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <a href="/comercios" class="btn btn-link px-0"><i class="bi bi-arrow-left"></i> Voltar</a>
+    <?php if ($ehDono): ?>
+        <a href="/comercios/<?= (int) $comercio->id ?>/editar" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-pencil"></i> Editar
+        </a>
+    <?php endif; ?>
+</div>
 <div class="card shadow-sm overflow-hidden">
     <img src="<?= e(App\Core\Config::get('upload_url') . '/' . $comercio->imagemCapa) ?>"
          alt="Capa de <?= e($comercio->titulo) ?>" class="card-img-top object-fit-cover" style="max-height:360px">

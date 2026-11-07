@@ -30,7 +30,14 @@ final class Database
             horario_abertura TEXT NOT NULL,
             horario_fechamento TEXT NOT NULL,
             imagem_capa TEXT NOT NULL,
+            usuario TEXT,
             criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         )');
+
+        // Migração: bancos criados antes da coluna "usuario" (dono do comércio)
+        $cols = array_column($pdo->query('PRAGMA table_info(comercios)')->fetchAll(), 'name');
+        if (!in_array('usuario', $cols, true)) {
+            $pdo->exec('ALTER TABLE comercios ADD COLUMN usuario TEXT');
+        }
     }
 }
